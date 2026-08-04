@@ -1,0 +1,6 @@
+{
+  "name": "Tuljabhavani Authentication",
+  "description": "Supabase email/password authentication system for the Tuljabhavani application.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
