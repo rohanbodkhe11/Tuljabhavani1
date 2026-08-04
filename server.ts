@@ -71,45 +71,41 @@ async function startServer() {
     res.json({ success: true });
   });
 
-  // Data endpoints using Supabase
+  // Data endpoints using Supabase with robust fallback support
   app.get("/api/members", async (req, res) => {
     try {
       const { data, error } = await supabase!.from('members').select('*').order('id', { ascending: true });
-      if (error) {
-        // If table doesn't exist yet, return initial seed and try to insert
+      if (error || !data || data.length === 0) {
         return res.json(initialMembers.map(m => ({ id: m.id, name: m.name, role: m.role, monthlySaving: m.monthly_saving, joinedAt: m.joined_at })));
       }
-      // Map database columns to frontend camelCase
-      const formatted = (data || []).map((m: any) => ({
+      const formatted = data.map((m: any) => ({
         id: String(m.id),
         name: m.name,
         role: m.role,
         monthlySaving: m.monthly_saving ?? m.monthlySaving ?? 100,
         joinedAt: m.joined_at ?? m.joinedAt ?? '2024-01-01'
       }));
-      if (formatted.length === 0) {
-        return res.json(initialMembers.map(m => ({ id: m.id, name: m.name, role: m.role, monthlySaving: m.monthly_saving, joinedAt: m.joined_at })));
-      }
       res.json(formatted);
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      // Fallback to initial seed if DB not ready
+      res.json(initialMembers.map(m => ({ id: m.id, name: m.name, role: m.role, monthlySaving: m.monthly_saving, joinedAt: m.joined_at })));
     }
   });
 
   app.get("/api/meetings", async (req, res) => {
     try {
       const { data, error } = await supabase!.from('meetings').select('date, records').order('date', { ascending: false });
-      if (error) {
+      if (error || !data) {
         return res.json([]);
       }
-      const summaries = (data || []).map((row: any) => {
+      const summaries = data.map((row: any) => {
         const records = row.records || [];
         const total = records.reduce((acc: number, r: any) => acc + (Number(r.total) || 0), 0);
         return { date: row.date, total, memberCount: records.length };
       });
       res.json(summaries);
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.json([]);
     }
   });
 
@@ -188,7 +184,6 @@ async function startServer() {
 
   app.post("/api/reset", async (req, res) => {
     try {
-      // Clear meetings and reset members
       await supabase!.from('meetings').delete().neq('date', '');
       await supabase!.from('members').delete().neq('id', '0');
       for (const m of initialMembers) {
