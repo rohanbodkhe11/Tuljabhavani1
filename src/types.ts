@@ -25,6 +25,7 @@ export interface MeetingRecord {
   interest: number;
   saving: number;
   total: number;
+  present?: boolean;
 }
 
 export interface AppSettings {

@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
-import { MeetingRecord, Member } from '../types';
-import { Save, Printer, Download, Calculator, Info, Loader2, CheckCircle, X } from 'lucide-react';
+import { MeetingRecord } from '../types';
+import { Save, Printer, Download, Calculator, Info, Loader2, CheckCircle, X, CheckCircle2, XCircle, Trash2, AlertTriangle, Users } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { fetchMembers, fetchMeetingRecords, fetchMeetingSummaries, saveMeetingRecords } from '../lib/dbService';
+import { fetchMembers, fetchMeetingRecords, fetchMeetingSummaries, saveMeetingRecords, deleteMeeting } from '../lib/dbService';
 
 export default function MeetingRegister({ userRole, initialDate, onDateChange }: { userRole: string, initialDate?: string | null, onDateChange?: () => void }) {
-  const isAdmin = userRole === 'अध्यक्षा';
+  const isAdmin = userRole === 'अध्यक्षा' || userRole?.toLowerCase() === 'admin' || userRole?.toLowerCase() === 'adhyaksha';
   const [records, setRecords] = useState<Partial<MeetingRecord>[]>([]);
   const [date, setDate] = useState(initialDate || new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isCalcOpen, setIsCalcOpen] = useState(false);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [calcData, setCalcData] = useState({ amount: 0, rate: 2, months: 1 });
   const calcResult = (calcData.amount * calcData.rate * calcData.months) / 100;
 
@@ -42,7 +44,8 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
             const matchedMember = memberMap.get(r.memberId);
             return {
               ...r,
-              memberName: matchedMember ? matchedMember.name : r.memberName
+              memberName: matchedMember ? matchedMember.name : r.memberName,
+              present: r.present !== false
             };
           });
 
@@ -56,7 +59,8 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
               loan: 0,
               interest: 0,
               saving: monthlySaving,
-              total: monthlySaving
+              total: monthlySaving,
+              present: true
             };
           });
 
@@ -88,7 +92,8 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
               loan: loan,
               interest: interest,
               saving: monthlySaving,
-              total: interest + monthlySaving
+              total: interest + monthlySaving,
+              present: true
             };
           });
           setRecords(initial);
@@ -117,30 +122,58 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
     }
   };
 
+  const handleDeleteMeeting = async () => {
+    if (!isAdmin) return;
+    setIsDeleting(true);
+    try {
+      await deleteMeeting(date);
+      setIsConfirmDeleteOpen(false);
+      if (onDateChange) onDateChange();
+      // Reload current date data (will revert to un-saved default)
+      setDate(new Date().toISOString().split('T')[0]);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const toggleAttendance = (index: number) => {
+    if (!isAdmin) return;
+    const newRecords = [...records];
+    const isPresent = newRecords[index].present !== false;
+    newRecords[index] = {
+      ...newRecords[index],
+      present: !isPresent
+    };
+    setRecords(newRecords);
+  };
+
   const generatePDF = () => {
     const doc = new jsPDF();
     const formattedDate = new Date(date).toLocaleDateString('mr-IN', { day: 'numeric', month: 'long', year: 'numeric' });
     
     // Add header
     doc.setFontSize(20);
-    doc.text('साई श्रद्धा महिला बचत गट', 105, 15, { align: 'center' });
+    doc.text('तुळजाभवानी महिला बचत गट', 105, 15, { align: 'center' });
     doc.setFontSize(14);
     doc.text(`मासिक सभा नोंदणी - ${formattedDate}`, 105, 25, { align: 'center' });
 
     // Summary stats
     doc.setFontSize(10);
-    doc.text(`एकूण कर्ज: Rs. ${totals.loan}`, 14, 40);
-    doc.text(`एकूण व्याज: Rs. ${totals.interest}`, 60, 40);
-    doc.text(`एकूण बचत: Rs. ${totals.saving}`, 110, 40);
+    doc.text(`उपस्थिती: ${records.filter(r => r.present !== false).length}/${records.length} सदस्य`, 14, 40);
+    doc.text(`एकूण कर्ज: Rs. ${totals.loan}`, 65, 40);
+    doc.text(`एकूण व्याज: Rs. ${totals.interest}`, 110, 40);
     doc.text(`एकूण जमा: Rs. ${totals.total}`, 160, 40);
 
     // Table
     autoTable(doc, {
       startY: 50,
-      head: [['क्र', 'सदस्याचे नाव', 'कर्ज (Rs)', 'व्याज (Rs)', 'बचत (Rs)', 'एकूण (Rs)']],
+      head: [['क्र', 'सदस्याचे नाव', 'उपस्थिती', 'कर्ज (Rs)', 'व्याज (Rs)', 'बचत (Rs)', 'एकूण (Rs)']],
       body: records.map((r, i) => [
         i + 1,
         r.memberName,
+        r.present !== false ? 'उपस्थित' : 'अनुपस्थित',
         r.loan,
         r.interest,
         r.saving,
@@ -148,7 +181,7 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
       ]),
       theme: 'grid',
       headStyles: { fillColor: [16, 185, 129] },
-      foot: [['', 'एकूण', totals.loan, totals.interest, totals.saving, totals.total]],
+      foot: [['', '', 'एकूण जमा', totals.loan, totals.interest, totals.saving, totals.total]],
       footStyles: { fillColor: [31, 41, 55], textColor: [255, 255, 255] }
     });
 
@@ -183,8 +216,51 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
     total: acc.total + (curr.total || 0),
   }), { loan: 0, interest: 0, saving: 0, total: 0 });
 
+  const presentCount = records.filter(r => r.present !== false).length;
+
   return (
     <div className="space-y-8">
+      {/* Delete Confirmation Modal */}
+      {isConfirmDeleteOpen && (
+        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[32px] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <header className="p-6 flex items-center justify-between bg-red-50/60 border-b border-red-100">
+              <h2 className="text-xl font-bold text-red-700 flex items-center gap-2">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+                मीटिंग इतिहास हटवा
+              </h2>
+              <button onClick={() => setIsConfirmDeleteOpen(false)} className="p-2 hover:bg-stone-200/50 rounded-xl">
+                <X className="w-5 h-5 text-stone-400" />
+              </button>
+            </header>
+            <div className="p-6 space-y-4">
+              <p className="text-stone-700 font-medium leading-relaxed">
+                तुम्हाला <span className="font-bold text-stone-900">{new Date(date).toLocaleDateString('mr-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span> या तारखेची मीटिंग नोंदणी नक्की हटवायची आहे का?
+              </p>
+              <p className="text-xs text-red-500 font-semibold bg-red-50 p-3 rounded-xl border border-red-100">
+                ही कारवाई कायमस्वरूपी असून हटवलेली माहिती पुन्हा मिळवता येणार नाही.
+              </p>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setIsConfirmDeleteOpen(false)}
+                  className="flex-1 py-3 bg-stone-100 text-stone-700 rounded-xl font-bold hover:bg-stone-200 transition-all text-sm"
+                >
+                  रद्द करा
+                </button>
+                <button
+                  onClick={handleDeleteMeeting}
+                  disabled={isDeleting}
+                  className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 disabled:opacity-50"
+                >
+                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  होय, हटवा
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Calculator Modal */}
       {isCalcOpen && (
         <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -265,6 +341,13 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
                 <Calculator className="w-5 h-5" />
               </button>
               <button 
+                onClick={() => setIsConfirmDeleteOpen(true)}
+                className="p-3 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-all"
+                title="या तारखेचा इतिहास हटवा"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+              <button 
                 onClick={handleSave}
                 disabled={saving}
                 className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all disabled:opacity-50"
@@ -290,89 +373,121 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'एकूण कर्ज', value: totals.loan, color: 'text-orange-600', bg: 'bg-orange-50' },
-          { label: 'एकूण व्याज', value: totals.interest, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'एकूण बचत', value: totals.saving, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'एकूण जमा', value: totals.total, color: 'text-stone-800', bg: 'bg-white' },
-        ].map((stat) => (
-          <div key={stat.label} className={`${stat.bg} p-6 rounded-2xl border border-stone-100 shadow-sm`}>
-            <p className="text-xs font-black text-stone-400 uppercase tracking-widest mb-1">{stat.label}</p>
-            <p className={`text-2xl font-black ${stat.color}`}>₹{stat.value.toLocaleString()}</p>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 shadow-sm">
+              <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-1 flex items-center gap-1">
+                <Users className="w-3.5 h-3.5" />
+                उपस्थिती
+              </p>
+              <p className="text-2xl font-black text-emerald-800">{presentCount} / {records.length}</p>
+            </div>
+            {[
+              { label: 'एकूण कर्ज', value: totals.loan, color: 'text-orange-600', bg: 'bg-orange-50' },
+              { label: 'एकूण व्याज', value: totals.interest, color: 'text-blue-600', bg: 'bg-blue-50' },
+              { label: 'एकूण बचत', value: totals.saving, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+              { label: 'एकूण जमा', value: totals.total, color: 'text-stone-800', bg: 'bg-white' },
+            ].map((stat) => (
+              <div key={stat.label} className={`${stat.bg} p-6 rounded-2xl border border-stone-100 shadow-sm`}>
+                <p className="text-xs font-black text-stone-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                <p className={`text-2xl font-black ${stat.color}`}>₹{stat.value.toLocaleString()}</p>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
-        <div className="p-4 bg-emerald-50 border-b border-emerald-100 flex items-center gap-2 text-emerald-800 text-sm font-bold">
-          <Info className="w-4 h-4" />
-          <span>व्याज दर: २% (दर महा) - कर्ज किंवा व्याज बदलल्यास आपोआप गणना केली जाते.</span>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-stone-50/50">
-                <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100">क्र</th>
-                <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100">सदस्याचे नाव</th>
-                <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 w-32">कर्ज (₹)</th>
-                <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 w-32">व्याज (₹)</th>
-                <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 w-32">बचत (₹)</th>
-                <th className="px-6 py-5 text-xs font-black text-stone-800 uppercase tracking-widest border-b border-stone-100 w-32 bg-stone-100/50">एकूण (₹)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-50">
-              {records.map((record, index) => (
-                <tr key={index} className="hover:bg-stone-50/30 transition-colors">
-                  <td className="px-6 py-4 font-bold text-stone-400">{index + 1}</td>
-                  <td className="px-6 py-4 font-bold text-stone-800">{record.memberName}</td>
-                  <td className="px-4 py-2">
-                    <input 
-                      type="number" 
-                      value={record.loan}
-                      readOnly={!isAdmin}
-                      onChange={(e) => updateRecord(index, 'loan', Number(e.target.value))}
-                      className="w-full px-3 py-2 bg-stone-50 border border-stone-100 rounded-lg font-bold text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:bg-white transition-all text-sm"
-                    />
-                  </td>
-                  <td className="px-4 py-2">
-                    <input 
-                      type="number" 
-                      value={record.interest}
-                      readOnly={!isAdmin}
-                      onChange={(e) => updateRecord(index, 'interest', Number(e.target.value))}
-                      className="w-full px-3 py-2 bg-stone-50 border border-stone-100 rounded-lg font-bold text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all text-sm"
-                    />
-                  </td>
-                  <td className="px-4 py-2">
-                    <input 
-                      type="number" 
-                      value={record.saving}
-                      readOnly={!isAdmin}
-                      onChange={(e) => updateRecord(index, 'saving', Number(e.target.value))}
-                      className="w-full px-3 py-2 bg-stone-50 border border-stone-100 rounded-lg font-bold text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-all text-sm"
-                    />
-                  </td>
-                  <td className="px-6 py-4 font-black text-stone-800 bg-stone-50/30">
-                    ₹{record.total?.toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="bg-stone-800 text-white">
-                <td colSpan={2} className="px-6 py-4 font-black text-lg">एकूण जमा:</td>
-                <td className="px-4 py-4 font-black text-lg text-orange-300">₹{totals.loan.toLocaleString()}</td>
-                <td className="px-4 py-4 font-black text-lg text-blue-300">₹{totals.interest.toLocaleString()}</td>
-                <td className="px-4 py-4 font-black text-lg text-emerald-300">₹{totals.saving.toLocaleString()}</td>
-                <td className="px-6 py-4 font-black text-xl text-white">₹{totals.total.toLocaleString()}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-      
+          <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+            <div className="p-4 bg-emerald-50 border-b border-emerald-100 flex items-center gap-2 text-emerald-800 text-sm font-bold">
+              <Info className="w-4 h-4" />
+              <span>व्याज दर: २% (दर महा) - उपस्थिती नोंदवा आणि कर्ज / बचत बदलल्यास जतन करा.</span>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-stone-50/50">
+                    <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100">क्र</th>
+                    <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100">सदस्याचे नाव</th>
+                    <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 w-36">उपस्थिती</th>
+                    <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 w-32">कर्ज (₹)</th>
+                    <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 w-32">व्याज (₹)</th>
+                    <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 w-32">बचत (₹)</th>
+                    <th className="px-6 py-5 text-xs font-black text-stone-800 uppercase tracking-widest border-b border-stone-100 w-32 bg-stone-100/50">एकूण (₹)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-50">
+                  {records.map((record, index) => (
+                    <tr key={index} className="hover:bg-stone-50/30 transition-colors">
+                      <td className="px-6 py-4 font-bold text-stone-400">{index + 1}</td>
+                      <td className="px-6 py-4 font-bold text-stone-800">{record.memberName}</td>
+                      <td className="px-4 py-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleAttendance(index)}
+                          disabled={!isAdmin}
+                          title={isAdmin ? "उपस्थिती बदला" : "केवळ अध्यक्षांना परवानगी आहे"}
+                          className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all ${
+                            record.present !== false
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200'
+                              : 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
+                          } disabled:opacity-80`}
+                        >
+                          {record.present !== false ? (
+                            <>
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              उपस्थित
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-3.5 h-3.5 text-red-500" />
+                              अनुपस्थित
+                            </>
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-4 py-2">
+                        <input 
+                          type="number" 
+                          value={record.loan}
+                          readOnly={!isAdmin}
+                          onChange={(e) => updateRecord(index, 'loan', Number(e.target.value))}
+                          className="w-full px-3 py-2 bg-stone-50 border border-stone-100 rounded-lg font-bold text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:bg-white transition-all text-sm"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <input 
+                          type="number" 
+                          value={record.interest}
+                          readOnly={!isAdmin}
+                          onChange={(e) => updateRecord(index, 'interest', Number(e.target.value))}
+                          className="w-full px-3 py-2 bg-stone-50 border border-stone-100 rounded-lg font-bold text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all text-sm"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <input 
+                          type="number" 
+                          value={record.saving}
+                          readOnly={!isAdmin}
+                          onChange={(e) => updateRecord(index, 'saving', Number(e.target.value))}
+                          className="w-full px-3 py-2 bg-stone-50 border border-stone-100 rounded-lg font-bold text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-all text-sm"
+                        />
+                      </td>
+                      <td className="px-6 py-4 font-black text-stone-800 bg-stone-50/30">
+                        ₹{record.total?.toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-stone-800 text-white">
+                    <td colSpan={3} className="px-6 py-4 font-black text-lg">एकूण जमा:</td>
+                    <td className="px-4 py-4 font-black text-lg text-orange-300">₹{totals.loan.toLocaleString()}</td>
+                    <td className="px-4 py-4 font-black text-lg text-blue-300">₹{totals.interest.toLocaleString()}</td>
+                    <td className="px-4 py-4 font-black text-lg text-emerald-300">₹{totals.saving.toLocaleString()}</td>
+                    <td className="px-6 py-4 font-black text-xl text-white">₹{totals.total.toLocaleString()}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
         </>
       )}
       

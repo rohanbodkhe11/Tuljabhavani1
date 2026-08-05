@@ -149,6 +149,17 @@ async function startServer() {
     res.json({ success: true });
   });
 
+  app.delete("/api/meetings/:date", async (req, res) => {
+    const { date } = req.params;
+    delete memoryMeetings[date];
+    try {
+      await deleteDoc(doc(db, 'meetings', date));
+    } catch (err: any) {
+      console.warn("Firestore delete meeting fallback:", err.message);
+    }
+    res.json({ success: true });
+  });
+
   app.post("/api/members", async (req, res) => {
     const member = req.body;
     const newId = String(Date.now());

@@ -41,7 +41,7 @@ export default function App() {
       case 'meeting':
         return <MeetingRegister userRole={user.role} initialDate={meetingDate} onDateChange={() => setMeetingDate(null)} />;
       case 'history':
-        return <History onViewMeeting={(date) => {
+        return <History userRole={user.role} onViewMeeting={(date) => {
           setMeetingDate(date);
           setActiveTab('meeting');
         }} />;

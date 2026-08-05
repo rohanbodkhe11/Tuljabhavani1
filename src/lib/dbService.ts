@@ -307,6 +307,28 @@ export async function saveMeetingRecords(date: string, records: MeetingRecord[])
   return true;
 }
 
+export async function deleteMeeting(date: string): Promise<boolean> {
+  const local = getLocalMeetings();
+  delete local[date];
+  saveLocalMeetings(local);
+
+  try {
+    const docRef = doc(db, 'meetings', date);
+    await deleteDoc(docRef);
+  } catch (err) {
+    console.warn("Firestore delete meeting error:", err);
+    try {
+      await fetch(`/api/meetings/${date}`, {
+        method: 'DELETE'
+      });
+    } catch (apiErr) {
+      console.warn("Backend API delete meeting failed:", apiErr);
+    }
+  }
+
+  return true;
+}
+
 export async function resetDatabase(): Promise<boolean> {
   saveLocalMembers(initialMembers);
   saveLocalMeetings({});
