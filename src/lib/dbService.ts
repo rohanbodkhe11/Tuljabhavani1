@@ -255,6 +255,52 @@ export async function fetchMeetingSummaries(): Promise<{ date: string; total: nu
   return summaries;
 }
 
+export async function fetchAllMeetingsWithRecords(): Promise<{ date: string; records: MeetingRecord[]; total: number; memberCount: number }[]> {
+  try {
+    const snapshot = await getDocs(collection(db, 'meetings'));
+    if (!snapshot.empty) {
+      const meetings = snapshot.docs.map(d => {
+        const data = d.data();
+        const records: MeetingRecord[] = Array.isArray(data.records) ? data.records : [];
+        const total = data.total ?? records.reduce((acc, r) => acc + (Number(r.total) || 0), 0);
+        return {
+          date: d.id,
+          records,
+          total,
+          memberCount: data.memberCount ?? records.length
+        };
+      });
+      meetings.sort((a, b) => a.date.localeCompare(b.date));
+      return meetings;
+    }
+  } catch (err) {
+    console.warn("Firestore fetchAllMeetingsWithRecords error:", err);
+    try {
+      const res = await fetch('/api/meetings');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const detailed = await Promise.all(data.map(async (m: any) => {
+            const records = await fetchMeetingRecords(m.date);
+            return { date: m.date, records, total: m.total, memberCount: m.memberCount };
+          }));
+          return detailed;
+        }
+      }
+    } catch (apiErr) {
+      console.warn("Backend API fetchAllMeetingsWithRecords failed:", apiErr);
+    }
+  }
+
+  const local = getLocalMeetings();
+  const dates = Object.keys(local).sort((a, b) => a.localeCompare(b));
+  return dates.map(date => {
+    const records = local[date] || [];
+    const total = records.reduce((acc, r) => acc + (Number(r.total) || 0), 0);
+    return { date, records, total, memberCount: records.length };
+  });
+}
+
 export async function fetchMeetingRecords(date: string): Promise<MeetingRecord[]> {
   try {
     const docRef = doc(db, 'meetings', date);
