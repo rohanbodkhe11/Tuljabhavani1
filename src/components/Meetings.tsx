@@ -34,7 +34,33 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
         ]);
 
         if (existingRecords && existingRecords.length > 0) {
-          setRecords(existingRecords);
+          const memberMap = new Map(members.map(m => [m.id, m]));
+          const recordMemberIds = new Set(existingRecords.map(r => r.memberId));
+
+          // Update memberName to match current member name from member section
+          const updatedExisting = existingRecords.map(r => {
+            const matchedMember = memberMap.get(r.memberId);
+            return {
+              ...r,
+              memberName: matchedMember ? matchedMember.name : r.memberName
+            };
+          });
+
+          // Check if any new member was added in the Members section that isn't in existingRecords
+          const missingMembers = members.filter(m => !recordMemberIds.has(m.id));
+          const newMemberRecords = missingMembers.map(m => {
+            const monthlySaving = Number(m.monthlySaving) || 100;
+            return {
+              memberId: m.id,
+              memberName: m.name,
+              loan: 0,
+              interest: 0,
+              saving: monthlySaving,
+              total: monthlySaving
+            };
+          });
+
+          setRecords([...updatedExisting, ...newMemberRecords]);
         } else {
           // Carry over logic: find the latest meeting before this date
           let lastMeetingRecords: MeetingRecord[] = [];

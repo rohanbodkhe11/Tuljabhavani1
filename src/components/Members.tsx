@@ -6,7 +6,7 @@ import autoTable from 'jspdf-autotable';
 import { fetchMembers as getMembersFromDb, addMember, updateMember, deleteMember } from '../lib/dbService';
 
 export default function Members({ userRole }: { userRole: string }) {
-  const isAdmin = userRole === 'अध्यक्षा';
+  const isAdmin = userRole === 'अध्यक्षा' || userRole?.toLowerCase() === 'admin' || userRole?.toLowerCase() === 'adhyaksha';
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -181,14 +181,16 @@ export default function Members({ userRole }: { userRole: string }) {
                           setEditingMember(member);
                           setIsModalOpen(true);
                         }}
-                        className="p-2 text-stone-400 hover:text-emerald-600 transition-colors disabled:opacity-30" 
+                        title={isAdmin ? "सदस्याची माहिती बदला (Edit Member)" : "केवळ अध्यक्षांना परवानगी आहे"}
+                        className="p-2 text-stone-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent" 
                         disabled={!isAdmin}
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => handleDeleteMember(member.id)}
-                        className="p-2 text-stone-400 hover:text-red-600 transition-colors disabled:opacity-30" 
+                        title={isAdmin ? "सदस्य हटवा (Delete Member)" : "केवळ अध्यक्षांना परवानगी आहे"}
+                        className="p-2 text-stone-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent" 
                         disabled={!isAdmin}
                       >
                         <Trash2 className="w-4 h-4" />

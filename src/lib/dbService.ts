@@ -155,6 +155,44 @@ export async function updateMember(id: string, updated: Partial<Member>): Promis
     }
   }
 
+  // Sync member name across saved meetings
+  if (updated.name) {
+    const localMeetings = getLocalMeetings();
+    let localChanged = false;
+    Object.keys(localMeetings).forEach(date => {
+      let dateChanged = false;
+      localMeetings[date] = localMeetings[date].map(r => {
+        if (r.memberId === id && r.memberName !== updated.name) {
+          dateChanged = true;
+          return { ...r, memberName: updated.name! };
+        }
+        return r;
+      });
+      if (dateChanged) localChanged = true;
+    });
+    if (localChanged) saveLocalMeetings(localMeetings);
+
+    try {
+      const meetingsSnap = await getDocs(collection(db, 'meetings'));
+      for (const mDoc of meetingsSnap.docs) {
+        const data = mDoc.data();
+        let changed = false;
+        const records = (data.records || []).map((r: any) => {
+          if (r.memberId === id && r.memberName !== updated.name) {
+            changed = true;
+            return { ...r, memberName: updated.name };
+          }
+          return r;
+        });
+        if (changed) {
+          await updateDoc(doc(db, 'meetings', mDoc.id), { records });
+        }
+      }
+    } catch (err) {
+      console.warn("Firestore meetings sync error:", err);
+    }
+  }
+
   return current[idx] || ({ id, ...updated } as Member);
 }
 
