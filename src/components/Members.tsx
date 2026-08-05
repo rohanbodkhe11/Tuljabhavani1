@@ -102,10 +102,10 @@ export default function Members({ userRole }: { userRole: string }) {
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-stone-800 tracking-tight">सदस्य व्यवस्थापन</h1>
-          <p className="text-stone-500 font-medium mt-1">सर्व सदस्यांची यादी आणि माहिती</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">सदस्य व्यवस्थापन</h1>
+          <p className="text-stone-500 font-medium text-xs sm:text-sm mt-0.5">सर्व सदस्यांची यादी आणि माहिती</p>
         </div>
         {isAdmin && (
           <button 
@@ -113,7 +113,7 @@ export default function Members({ userRole }: { userRole: string }) {
               setEditingMember({ name: '', role: 'सदस्य', monthlySaving: 100 });
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-xl font-black shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all text-sm"
           >
             <UserPlus className="w-5 h-5" />
             नवीन सदस्य जोडा
@@ -121,31 +121,79 @@ export default function Members({ userRole }: { userRole: string }) {
         )}
       </header>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
-        <div className="p-6 border-b border-stone-50 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-stone-100 overflow-hidden">
+        <div className="p-4 sm:p-6 border-b border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+          <div className="relative w-full sm:w-80 md:w-96">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
             <input 
               type="text" 
               placeholder="सदस्य शोधा..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium transition-all"
+              className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-sm transition-all"
             />
           </div>
           <button 
             onClick={generatePDF}
-            className="flex items-center gap-2 px-4 py-2 text-stone-600 bg-stone-50 border border-stone-200 rounded-lg hover:bg-stone-100 transition-colors font-bold"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-stone-700 bg-stone-50 border border-stone-200 rounded-xl hover:bg-stone-100 transition-colors font-bold text-xs sm:text-sm active:scale-95"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4 text-emerald-600" />
             PDF डाउनलोड करा
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile View: Cards Layout (< 640px) */}
+        <div className="block sm:hidden divide-y divide-stone-100">
+          {filteredMembers.map((member, index) => (
+            <div key={member.id} className="p-4 flex items-center justify-between hover:bg-stone-50/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-base shadow-xs border border-emerald-200 shrink-0">
+                  {member.name[0]}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-stone-900 text-sm">{member.name}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      member.role === 'अध्यक्षा' ? 'bg-orange-100 text-orange-700' :
+                      member.role === 'सचिव' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      {member.role}
+                    </span>
+                  </div>
+                  <p className="text-xs text-stone-500 font-bold mt-0.5">मासिक बचत: <span className="text-emerald-700 font-black">₹{member.monthlySaving}</span></p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={() => {
+                    setEditingMember(member);
+                    setIsModalOpen(true);
+                  }}
+                  disabled={!isAdmin}
+                  className="p-2.5 text-stone-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all disabled:opacity-30 active:scale-95"
+                  title="सुधारा"
+                >
+                  <Edit2 className="w-4 h-4 text-emerald-600" />
+                </button>
+                <button 
+                  onClick={() => handleDeleteMember(member.id)}
+                  disabled={!isAdmin}
+                  className="p-2.5 text-stone-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-30 active:scale-95"
+                  title="हटवा"
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop / Tablet View: Table Layout (>= 640px) */}
+        <div className="hidden sm:block overflow-x-auto custom-scrollbar">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-stone-50/50">
+              <tr className="bg-stone-50/80 border-b border-stone-100">
                 <th className="px-6 py-4 text-xs font-black text-stone-400 uppercase tracking-widest">क्र</th>
                 <th className="px-6 py-4 text-xs font-black text-stone-400 uppercase tracking-widest">सदस्याचे नाव</th>
                 <th className="px-6 py-4 text-xs font-black text-stone-400 uppercase tracking-widest">पद</th>
@@ -155,42 +203,42 @@ export default function Members({ userRole }: { userRole: string }) {
             </thead>
             <tbody className="divide-y divide-stone-50">
               {filteredMembers.map((member, index) => (
-                <tr key={member.id} className="hover:bg-stone-50/30 transition-colors">
+                <tr key={member.id} className="hover:bg-stone-50/40 transition-colors">
                   <td className="px-6 py-4 font-bold text-stone-400">{index + 1}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold text-sm">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-black text-sm border border-emerald-100">
                         {member.name[0]}
                       </div>
-                      <span className="font-bold text-stone-800">{member.name}</span>
+                      <span className="font-black text-stone-900">{member.name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
                       member.role === 'अध्यक्षा' ? 'bg-orange-100 text-orange-700' :
                       member.role === 'सचिव' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
                     }`}>
                       {member.role}
                     </span>
                   </td>
-                  <td className="px-6 py-4 font-bold text-stone-600">₹{member.monthlySaving}</td>
+                  <td className="px-6 py-4 font-black text-emerald-700">₹{member.monthlySaving}</td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-1">
                       <button 
                         onClick={() => {
                           setEditingMember(member);
                           setIsModalOpen(true);
                         }}
-                        title={isAdmin ? "सदस्याची माहिती बदला (Edit Member)" : "केवळ अध्यक्षांना परवानगी आहे"}
-                        className="p-2 text-stone-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent" 
+                        title={isAdmin ? "सदस्याची माहिती बदला" : "केवळ अध्यक्षांना परवानगी आहे"}
+                        className="p-2 text-stone-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all disabled:opacity-30 active:scale-95" 
                         disabled={!isAdmin}
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => handleDeleteMember(member.id)}
-                        title={isAdmin ? "सदस्य हटवा (Delete Member)" : "केवळ अध्यक्षांना परवानगी आहे"}
-                        className="p-2 text-stone-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent" 
+                        title={isAdmin ? "सदस्य हटवा" : "केवळ अध्यक्षांना परवानगी आहे"}
+                        className="p-2 text-stone-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-30 active:scale-95" 
                         disabled={!isAdmin}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -204,12 +252,12 @@ export default function Members({ userRole }: { userRole: string }) {
         </div>
       </div>
 
-      {/* Member Modal */}
+      {/* Touch-Friendly Member Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] w-full max-w-md shadow-2xl overflow-hidden border border-white/20 animate-in zoom-in-95 duration-200">
-            <header className="p-8 flex items-center justify-between bg-stone-50/50">
-              <h2 className="text-2xl font-black text-stone-800 tracking-tight">
+        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-[32px] sm:rounded-[32px] w-full max-w-md shadow-2xl overflow-hidden border border-stone-100 animate-in slide-in-from-bottom duration-200">
+            <header className="p-6 sm:p-8 flex items-center justify-between bg-stone-50 border-b border-stone-100">
+              <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
                 {editingMember?.id ? 'सदस्य माहिती बदला' : 'नवीन सदस्य जोडा'}
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-stone-200/50 rounded-xl transition-all">
@@ -217,25 +265,25 @@ export default function Members({ userRole }: { userRole: string }) {
               </button>
             </header>
             
-            <form onSubmit={handleSaveMember} className="p-8 space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-black text-stone-400 uppercase tracking-widest">सदस्याचे नाव</label>
+            <form onSubmit={handleSaveMember} className="p-6 sm:p-8 space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-stone-500 uppercase tracking-widest">सदस्याचे नाव</label>
                 <input 
                   type="text" 
                   required
                   value={editingMember?.name || ''}
                   onChange={e => setEditingMember({...editingMember, name: e.target.value})}
-                  className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-bold transition-all"
+                  className="w-full px-4 py-3.5 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-bold text-sm transition-all"
                   placeholder="उदा. रुख्मणबाई बोडखे"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-black text-stone-400 uppercase tracking-widest">पद</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-stone-500 uppercase tracking-widest">पद (Role)</label>
                 <select 
                   value={editingMember?.role || 'सदस्य'}
                   onChange={e => setEditingMember({...editingMember, role: e.target.value})}
-                  className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-bold transition-all appearance-none"
+                  className="w-full px-4 py-3.5 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-bold text-sm transition-all appearance-none"
                 >
                   <option value="अध्यक्षा">अध्यक्षा</option>
                   <option value="सचिव">सचिव</option>
@@ -243,23 +291,24 @@ export default function Members({ userRole }: { userRole: string }) {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-black text-stone-400 uppercase tracking-widest">मासिक बचत (₹)</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-stone-500 uppercase tracking-widest">मासिक बचत (₹)</label>
                 <input 
-                  type="number" 
+                  type="number"
+                  inputMode="numeric" 
                   required
                   value={editingMember?.monthlySaving || 100}
                   onChange={e => setEditingMember({...editingMember, monthlySaving: Number(e.target.value)})}
-                  className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-bold transition-all"
+                  className="w-full px-4 py-3.5 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-bold text-sm transition-all"
                 />
               </div>
 
               <button 
                 type="submit"
                 disabled={saving}
-                className="w-full py-5 bg-emerald-600 text-white rounded-[24px] font-black text-lg shadow-xl shadow-emerald-600/30 hover:bg-emerald-700 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                className="w-full py-4 sm:py-5 bg-emerald-600 text-white rounded-[20px] font-black text-base sm:text-lg shadow-xl shadow-emerald-600/30 hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4"
               >
-                {saving ? <Loader2 className="w-6 h-6 animate-spin" /> : <Check className="w-6 h-6" />}
+                {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
                 {editingMember?.id ? 'बदल जतन करा' : 'सदस्य जतन करा'}
               </button>
             </form>

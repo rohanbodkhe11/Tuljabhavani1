@@ -319,30 +319,30 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
         </div>
       )}
 
-      <header className="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-stone-800 tracking-tight">मीटिंग रजिस्टर</h1>
-          <p className="text-stone-500 font-medium mt-1">मासिक सभा नोंदणी आणि व्यवहार</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">मीटिंग रजिस्टर</h1>
+          <p className="text-stone-500 font-medium text-xs sm:text-sm mt-0.5">मासिक सभा नोंदणी आणि व्यवहार</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full md:w-auto">
           <input 
             type="date" 
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="px-4 py-3 bg-white border border-stone-200 rounded-xl font-bold text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-sm"
+            className="flex-1 md:flex-initial px-3.5 py-2.5 sm:px-4 sm:py-3 bg-white border border-stone-200 rounded-xl font-bold text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-xs text-sm"
           />
           {isAdmin && (
             <>
               <button 
                 onClick={() => setIsCalcOpen(true)}
-                className="p-3 bg-stone-100 text-stone-600 rounded-xl font-bold hover:bg-stone-200 transition-all"
+                className="p-2.5 sm:p-3 bg-stone-100 text-stone-700 rounded-xl font-bold hover:bg-stone-200 transition-all active:scale-95"
                 title="कॅल्क्युलेटर"
               >
-                <Calculator className="w-5 h-5" />
+                <Calculator className="w-5 h-5 text-emerald-600" />
               </button>
               <button 
                 onClick={() => setIsConfirmDeleteOpen(true)}
-                className="p-3 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-all"
+                className="p-2.5 sm:p-3 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-all active:scale-95"
                 title="या तारखेचा इतिहास हटवा"
               >
                 <Trash2 className="w-5 h-5" />
@@ -350,9 +350,9 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
               <button 
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3 bg-emerald-600 text-white rounded-xl font-extrabold shadow-md shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all disabled:opacity-50 text-sm"
               >
-                {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                {saving ? <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" /> : <Save className="w-4 h-4 sm:w-5 sm:h-5" />}
                 जतन करा
               </button>
             </>
@@ -361,8 +361,8 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
       </header>
 
       {showSuccess && (
-        <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-center gap-3 text-emerald-800 font-bold animate-in fade-in slide-in-from-top-4">
-          <CheckCircle className="w-6 h-6" />
+        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex items-center gap-3 text-emerald-800 font-bold animate-in fade-in slide-in-from-top-4 shadow-sm text-sm sm:text-base">
+          <CheckCircle className="w-6 h-6 text-emerald-600 shrink-0" />
           <span>माहिती यशस्वीरीत्या जतन करण्यात आली आहे!</span>
         </div>
       )}
@@ -373,116 +373,143 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 shadow-sm">
-              <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-1 flex items-center gap-1">
-                <Users className="w-3.5 h-3.5" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="bg-emerald-50/80 p-4 sm:p-5 rounded-2xl border border-emerald-100 shadow-xs">
+              <p className="text-[11px] font-black text-emerald-700 uppercase tracking-widest mb-1 flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-emerald-600" />
                 उपस्थिती
               </p>
-              <p className="text-2xl font-black text-emerald-800">{presentCount} / {records.length}</p>
+              <p className="text-xl sm:text-2xl font-black text-emerald-800">{presentCount} / {records.length}</p>
             </div>
             {[
-              { label: 'एकूण कर्ज', value: totals.loan, color: 'text-orange-600', bg: 'bg-orange-50' },
-              { label: 'एकूण व्याज', value: totals.interest, color: 'text-blue-600', bg: 'bg-blue-50' },
-              { label: 'एकूण बचत', value: totals.saving, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-              { label: 'एकूण जमा', value: totals.total, color: 'text-stone-800', bg: 'bg-white' },
+              { label: 'एकूण कर्ज', value: totals.loan, color: 'text-orange-600', bg: 'bg-orange-50/80' },
+              { label: 'एकूण व्याज', value: totals.interest, color: 'text-blue-600', bg: 'bg-blue-50/80' },
+              { label: 'एकूण बचत', value: totals.saving, color: 'text-emerald-600', bg: 'bg-emerald-50/80' },
+              { label: 'एकूण जमा', value: totals.total, color: 'text-stone-900', bg: 'bg-white border-stone-200' },
             ].map((stat) => (
-              <div key={stat.label} className={`${stat.bg} p-6 rounded-2xl border border-stone-100 shadow-sm`}>
-                <p className="text-xs font-black text-stone-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                <p className={`text-2xl font-black ${stat.color}`}>₹{stat.value.toLocaleString()}</p>
+              <div key={stat.label} className={`${stat.bg} p-4 sm:p-5 rounded-2xl border border-stone-100 shadow-xs`}>
+                <p className="text-[11px] font-black text-stone-500 uppercase tracking-widest mb-1">{stat.label}</p>
+                <p className={`text-xl sm:text-2xl font-black ${stat.color}`}>₹{stat.value.toLocaleString()}</p>
               </div>
             ))}
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
-            <div className="p-4 bg-emerald-50 border-b border-emerald-100 flex items-center gap-2 text-emerald-800 text-sm font-bold">
-              <Info className="w-4 h-4" />
-              <span>व्याज दर: २% (दर महा) - उपस्थिती नोंदवा आणि कर्ज / बचत बदलल्यास जतन करा.</span>
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-stone-100 overflow-hidden">
+            <div className="p-3.5 sm:p-4 bg-emerald-50/70 border-b border-emerald-100 flex items-center gap-2 text-emerald-900 text-xs sm:text-sm font-bold">
+              <Info className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>व्याज दर: २% (दर महा) - उपस्थिती नोंदवा आणि कर्ज / बचत बदलावा.</span>
             </div>
             
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            {/* Sticky Mobile & Desktop Responsive Table */}
+            <div className="overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar relative">
+              <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
-                  <tr className="bg-stone-50/50">
-                    <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100">क्र</th>
-                    <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100">सदस्याचे नाव</th>
-                    <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 w-36">उपस्थिती</th>
-                    <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 w-32">कर्ज (₹)</th>
-                    <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 w-32">व्याज (₹)</th>
-                    <th className="px-6 py-5 text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 w-32">बचत (₹)</th>
-                    <th className="px-6 py-5 text-xs font-black text-stone-800 uppercase tracking-widest border-b border-stone-100 w-32 bg-stone-100/50">एकूण (₹)</th>
+                  <tr className="bg-stone-100 text-stone-600">
+                    <th className="sticky top-0 left-0 z-30 bg-stone-100 border-b border-r border-stone-200 px-3 sm:px-4 py-4 text-xs font-black uppercase tracking-widest text-stone-500 w-12 text-center">
+                      क्र
+                    </th>
+                    <th className="sticky top-0 left-12 z-30 bg-stone-100 border-b border-r border-stone-200 px-4 py-4 text-xs font-black uppercase tracking-widest text-stone-700 min-w-[160px] shadow-xs">
+                      सदस्याचे नाव
+                    </th>
+                    <th className="sticky top-0 z-20 bg-stone-100 border-b border-stone-200 px-4 py-4 text-xs font-black uppercase tracking-widest text-stone-600 text-center w-36">
+                      उपस्थिती
+                    </th>
+                    <th className="sticky top-0 z-20 bg-stone-100 border-b border-stone-200 px-4 py-4 text-xs font-black uppercase tracking-widest text-stone-600 w-32">
+                      कर्ज (₹)
+                    </th>
+                    <th className="sticky top-0 z-20 bg-stone-100 border-b border-stone-200 px-4 py-4 text-xs font-black uppercase tracking-widest text-stone-600 w-32">
+                      व्याज (₹)
+                    </th>
+                    <th className="sticky top-0 z-20 bg-stone-100 border-b border-stone-200 px-4 py-4 text-xs font-black uppercase tracking-widest text-stone-600 w-32">
+                      बचत (₹)
+                    </th>
+                    <th className="sticky top-0 z-20 bg-stone-200/60 border-b border-stone-200 px-4 py-4 text-xs font-black uppercase tracking-widest text-stone-900 w-32">
+                      एकूण (₹)
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-stone-50">
-                  {records.map((record, index) => (
-                    <tr key={index} className="hover:bg-stone-50/30 transition-colors">
-                      <td className="px-6 py-4 font-bold text-stone-400">{index + 1}</td>
-                      <td className="px-6 py-4 font-bold text-stone-800">{record.memberName}</td>
-                      <td className="px-4 py-2">
-                        <button
-                          type="button"
-                          onClick={() => toggleAttendance(index)}
-                          disabled={!isAdmin}
-                          title={isAdmin ? "उपस्थिती बदला" : "केवळ अध्यक्षांना परवानगी आहे"}
-                          className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all ${
-                            record.present !== false
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200'
-                              : 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
-                          } disabled:opacity-80`}
-                        >
-                          {record.present !== false ? (
-                            <>
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              उपस्थित
-                            </>
-                          ) : (
-                            <>
-                              <XCircle className="w-3.5 h-3.5 text-red-500" />
-                              अनुपस्थित
-                            </>
-                          )}
-                        </button>
-                      </td>
-                      <td className="px-4 py-2">
-                        <input 
-                          type="number" 
-                          value={record.loan}
-                          readOnly={!isAdmin}
-                          onChange={(e) => updateRecord(index, 'loan', Number(e.target.value))}
-                          className="w-full px-3 py-2 bg-stone-50 border border-stone-100 rounded-lg font-bold text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:bg-white transition-all text-sm"
-                        />
-                      </td>
-                      <td className="px-4 py-2">
-                        <input 
-                          type="number" 
-                          value={record.interest}
-                          readOnly={!isAdmin}
-                          onChange={(e) => updateRecord(index, 'interest', Number(e.target.value))}
-                          className="w-full px-3 py-2 bg-stone-50 border border-stone-100 rounded-lg font-bold text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all text-sm"
-                        />
-                      </td>
-                      <td className="px-4 py-2">
-                        <input 
-                          type="number" 
-                          value={record.saving}
-                          readOnly={!isAdmin}
-                          onChange={(e) => updateRecord(index, 'saving', Number(e.target.value))}
-                          className="w-full px-3 py-2 bg-stone-50 border border-stone-100 rounded-lg font-bold text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-all text-sm"
-                        />
-                      </td>
-                      <td className="px-6 py-4 font-black text-stone-800 bg-stone-50/30">
-                        ₹{record.total?.toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-stone-100">
+                  {records.map((record, index) => {
+                    const isEven = index % 2 === 0;
+                    return (
+                      <tr key={index} className={`${isEven ? 'bg-white' : 'bg-stone-50/60'} hover:bg-emerald-50/20 transition-colors`}>
+                        <td className={`sticky left-0 z-10 ${isEven ? 'bg-white' : 'bg-stone-50'} border-r border-stone-200 px-3 sm:px-4 py-3.5 font-bold text-stone-400 text-center text-xs sm:text-sm`}>
+                          {index + 1}
+                        </td>
+                        <td className={`sticky left-12 z-10 ${isEven ? 'bg-white' : 'bg-stone-50'} border-r border-stone-200 px-4 py-3.5 font-black text-stone-900 text-xs sm:text-sm shadow-xs`}>
+                          {record.memberName}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => toggleAttendance(index)}
+                            disabled={!isAdmin}
+                            title={isAdmin ? "उपस्थिती बदला" : "केवळ अध्यक्षांना परवानगी आहे"}
+                            className={`min-h-[40px] px-3.5 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all w-full active:scale-95 ${
+                              record.present !== false
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200'
+                                : 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
+                            } disabled:opacity-80`}
+                          >
+                            {record.present !== false ? (
+                              <>
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                <span>उपस्थित</span>
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="w-4 h-4 text-red-500" />
+                                <span>अनुपस्थित</span>
+                              </>
+                            )}
+                          </button>
+                        </td>
+                        <td className="px-3 py-3">
+                          <input 
+                            type="number" 
+                            inputMode="numeric"
+                            value={record.loan}
+                            readOnly={!isAdmin}
+                            onChange={(e) => updateRecord(index, 'loan', Number(e.target.value))}
+                            className="w-full min-h-[40px] px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl font-black text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:bg-white transition-all text-sm"
+                          />
+                        </td>
+                        <td className="px-3 py-3">
+                          <input 
+                            type="number" 
+                            inputMode="numeric"
+                            value={record.interest}
+                            readOnly={!isAdmin}
+                            onChange={(e) => updateRecord(index, 'interest', Number(e.target.value))}
+                            className="w-full min-h-[40px] px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl font-black text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all text-sm"
+                          />
+                        </td>
+                        <td className="px-3 py-3">
+                          <input 
+                            type="number" 
+                            inputMode="numeric"
+                            value={record.saving}
+                            readOnly={!isAdmin}
+                            onChange={(e) => updateRecord(index, 'saving', Number(e.target.value))}
+                            className="w-full min-h-[40px] px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl font-black text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-all text-sm"
+                          />
+                        </td>
+                        <td className="px-4 py-3 font-black text-stone-900 bg-stone-100/30 text-sm sm:text-base">
+                          ₹{record.total?.toLocaleString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-stone-800 text-white">
-                    <td colSpan={3} className="px-6 py-4 font-black text-lg">एकूण जमा:</td>
-                    <td className="px-4 py-4 font-black text-lg text-orange-300">₹{totals.loan.toLocaleString()}</td>
-                    <td className="px-4 py-4 font-black text-lg text-blue-300">₹{totals.interest.toLocaleString()}</td>
-                    <td className="px-4 py-4 font-black text-lg text-emerald-300">₹{totals.saving.toLocaleString()}</td>
-                    <td className="px-6 py-4 font-black text-xl text-white">₹{totals.total.toLocaleString()}</td>
+                  <tr className="bg-stone-900 text-white font-black">
+                    <td colSpan={3} className="sticky left-0 z-10 bg-stone-900 px-4 py-4 text-sm sm:text-base">
+                      एकूण जमा (Total):
+                    </td>
+                    <td className="px-3 py-4 text-sm sm:text-base text-orange-300">₹{totals.loan.toLocaleString()}</td>
+                    <td className="px-3 py-4 text-sm sm:text-base text-blue-300">₹{totals.interest.toLocaleString()}</td>
+                    <td className="px-3 py-4 text-sm sm:text-base text-emerald-300">₹{totals.saving.toLocaleString()}</td>
+                    <td className="px-4 py-4 text-base sm:text-lg text-emerald-400">₹{totals.total.toLocaleString()}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -491,19 +518,19 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
         </>
       )}
       
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
         <button 
           onClick={() => window.print()}
-          className="flex items-center gap-2 px-6 py-3 bg-white border border-stone-200 rounded-xl font-bold text-stone-600 hover:bg-stone-50 transition-all"
+          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-white border border-stone-200 rounded-xl font-bold text-stone-700 hover:bg-stone-50 transition-all text-sm shadow-xs active:scale-95"
         >
-          <Printer className="w-5 h-5" />
+          <Printer className="w-4 h-4 text-stone-500" />
           प्रिंट काढा
         </button>
         <button 
           onClick={generatePDF}
-          className="flex items-center gap-2 px-6 py-3 bg-white border border-stone-200 rounded-xl font-bold text-stone-600 hover:bg-stone-50 transition-all"
+          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-white border border-stone-200 rounded-xl font-bold text-stone-700 hover:bg-stone-50 transition-all text-sm shadow-xs active:scale-95"
         >
-          <Download className="w-5 h-5" />
+          <Download className="w-4 h-4 text-emerald-600" />
           अहवाल डाउनलोड करा (PDF)
         </button>
       </div>
