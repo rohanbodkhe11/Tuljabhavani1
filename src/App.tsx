@@ -18,7 +18,15 @@ export default function App() {
   const [user, setUser] = useState<any | null>(() => {
     try {
       const saved = localStorage.getItem('bg_user');
-      return saved ? JSON.parse(saved) : null;
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      const email = parsed?.email?.toLowerCase();
+      if (email === 'rupeshpatil4586@gmail.com' || email === 'abc@gmail.com') {
+        const validatedRole = email === 'rupeshpatil4586@gmail.com' ? 'अध्यक्षा' : 'सदस्य';
+        return { ...parsed, role: validatedRole };
+      }
+      localStorage.removeItem('bg_user');
+      return null;
     } catch {
       return null;
     }

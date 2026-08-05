@@ -117,7 +117,13 @@ export default function Auth({ onAuthSuccess }: { onAuthSuccess: (user: any) => 
         </button>
       </form>
 
-      <div className="mt-8 text-center">
+      <div className="mt-6 p-3.5 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-600 space-y-1">
+        <div className="font-bold text-stone-800 text-center mb-1">अधिकृत लॉगिन खाती:</div>
+        <div className="flex justify-between items-center"><span className="font-semibold text-emerald-800">अध्यक्षा:</span> <span>rupeshpatil4586@gmail.com / 12345</span></div>
+        <div className="flex justify-between items-center"><span className="font-semibold text-blue-800">सदस्य:</span> <span>abc@gmail.com / 12345</span></div>
+      </div>
+
+      <div className="mt-6 text-center">
         <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">तुळजाभवानी महिला बचत गट</p>
       </div>
     </div>
