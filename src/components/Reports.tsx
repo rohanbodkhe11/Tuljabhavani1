@@ -16,8 +16,13 @@ export default function Reports() {
     fetch('/api/meetings')
       .then(res => res.json())
       .then(data => {
-        // Show last 6 meetings for chart
-        setMeetings([...data].reverse().slice(-6));
+        const meetingsList = Array.isArray(data) ? data : [];
+        setMeetings([...meetingsList].reverse().slice(-6));
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setMeetings([]);
         setLoading(false);
       });
   }, []);

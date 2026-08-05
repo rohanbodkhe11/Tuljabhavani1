@@ -19,22 +19,22 @@ export default function Dashboard({ user, setActiveTab }: { user: any; setActive
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/members').then(res => res.json()),
-      fetch('/api/meetings').then(res => res.json())
-    ]).then(([members, meetings]: [any[], any[]]) => {
-      // Calculate real stats
-      const totalSavings = meetings.reduce((acc, m) => acc + (m.total || 0), 0);
+      fetch('/api/members').then(res => res.json()).catch(() => []),
+      fetch('/api/meetings').then(res => res.json()).catch(() => [])
+    ]).then(([membersData, meetingsData]: [any, any]) => {
+      const members = Array.isArray(membersData) ? membersData : [];
+      const meetings = Array.isArray(meetingsData) ? meetingsData : [];
       
-      // For loans and interest, we need to sum up from all records in all meetings
-      // This is a bit expensive for client side, but okay for this small app.
-      // Alternatively, the /api/meetings summary could include these totals.
+      const totalSavings = meetings.reduce((acc, m) => acc + (Number(m?.total) || 0), 0);
       
       setStats({
         members: members.length,
         savings: totalSavings,
-        loans: 120000, // Placeholder or we could fetch all meeting records
-        interest: 2400   // Placeholder
+        loans: 120000,
+        interest: 2400
       });
+    }).catch(err => {
+      console.error("Dashboard fetch error:", err);
     });
   }, []);
 
@@ -61,10 +61,10 @@ export default function Dashboard({ user, setActiveTab }: { user: any; setActive
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'एकूण सदस्य', value: stats.members.toString(), icon: Users, color: 'bg-blue-600', shadow: 'shadow-blue-600/20', tab: 'members' },
-          { label: 'एकूण बचत', value: `₹${stats.savings.toLocaleString()}`, icon: PiggyBank, color: 'bg-emerald-600', shadow: 'shadow-emerald-600/20', tab: 'meeting' },
-          { label: 'दिलेले कर्ज', value: `₹${stats.loans.toLocaleString()}`, icon: CreditCard, color: 'bg-orange-600', shadow: 'shadow-orange-600/20', tab: 'meeting' },
-          { label: 'एकूण व्याज', value: `₹${stats.interest.toLocaleString()}`, icon: TrendingUp, color: 'bg-purple-600', shadow: 'shadow-purple-600/20', tab: 'reports' },
+          { label: 'एकूण सदस्य', value: String(stats.members ?? 0), icon: Users, color: 'bg-blue-600', shadow: 'shadow-blue-600/20', tab: 'members' },
+          { label: 'एकूण बचत', value: `₹${(stats.savings ?? 0).toLocaleString()}`, icon: PiggyBank, color: 'bg-emerald-600', shadow: 'shadow-emerald-600/20', tab: 'meeting' },
+          { label: 'दिलेले कर्ज', value: `₹${(stats.loans ?? 0).toLocaleString()}`, icon: CreditCard, color: 'bg-orange-600', shadow: 'shadow-orange-600/20', tab: 'meeting' },
+          { label: 'एकूण व्याज', value: `₹${(stats.interest ?? 0).toLocaleString()}`, icon: TrendingUp, color: 'bg-purple-600', shadow: 'shadow-purple-600/20', tab: 'reports' },
         ].map((stat) => (
           <div 
             key={stat.label} 

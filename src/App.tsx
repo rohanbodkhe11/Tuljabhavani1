@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
-import { User } from '@supabase/supabase-js';
+import { useState } from 'react';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import Layout from './components/Layout';
@@ -16,15 +15,27 @@ import History from './components/History';
 import Reports from './components/Reports';
 
 export default function App() {
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<any | null>(() => {
+    try {
+      const saved = localStorage.getItem('bg_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [meetingDate, setMeetingDate] = useState<string | null>(null);
 
+  const handleSignOut = () => {
+    localStorage.removeItem('bg_user');
+    setUser(null);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard user={user} setActiveTab={setActiveTab} onSignOut={() => setUser(null)} />;
+        return <Dashboard user={user} setActiveTab={setActiveTab} onSignOut={handleSignOut} />;
       case 'members':
         return <Members userRole={user.role} />;
       case 'meeting':
@@ -55,7 +66,10 @@ export default function App() {
   if (!user) {
     return (
       <div className="min-h-screen bg-emerald-600 flex items-center justify-center p-4">
-        <Auth onAuthSuccess={(u: any) => setUser(u)} />
+        <Auth onAuthSuccess={(u: any) => {
+          setUser(u);
+          localStorage.setItem('bg_user', JSON.stringify(u));
+        }} />
       </div>
     );
   }
@@ -63,7 +77,7 @@ export default function App() {
   return (
     <Layout 
       user={user} 
-      onSignOut={() => setUser(null)}
+      onSignOut={handleSignOut}
       activeTab={activeTab}
       setActiveTab={setActiveTab}
     >

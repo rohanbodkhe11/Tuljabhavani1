@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MeetingRecord, Member } from '../types';
-import { Save, Printer, Download, Calculator, Info, Loader2, CheckCircle } from 'lucide-react';
+import { Save, Printer, Download, Calculator, Info, Loader2, CheckCircle, X } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -27,14 +27,14 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
     const fetchMeetingData = async () => {
       try {
         const [membersRes, meetingRes, allMeetingsRes] = await Promise.all([
-          fetch('/api/members'),
-          fetch(`/api/meetings/${date}`),
-          fetch('/api/meetings')
+          fetch('/api/members').then(r => r.json()).catch(() => []),
+          fetch(`/api/meetings/${date}`).then(r => r.json()).catch(() => []),
+          fetch('/api/meetings').then(r => r.json()).catch(() => [])
         ]);
         
-        const members: Member[] = await membersRes.json();
-        const existingRecords: Partial<MeetingRecord>[] = await meetingRes.json();
-        const allMeetings: any[] = await allMeetingsRes.json();
+        const members: Member[] = Array.isArray(membersRes) ? membersRes : [];
+        const existingRecords: Partial<MeetingRecord>[] = Array.isArray(meetingRes) ? meetingRes : [];
+        const allMeetings: any[] = Array.isArray(allMeetingsRes) ? allMeetingsRes : [];
 
         if (existingRecords && existingRecords.length > 0) {
           setRecords(existingRecords);
@@ -42,26 +42,32 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
           // Carry over logic: find the latest meeting before this date
           let lastMeetingRecords: any[] = [];
           const pastMeetings = allMeetings
-            .filter(m => m.date < date)
+            .filter(m => m && m.date && m.date < date)
             .sort((a, b) => b.date.localeCompare(a.date));
           
           if (pastMeetings.length > 0) {
-            const lastMeetingRes = await fetch(`/api/meetings/${pastMeetings[0].date}`);
-            lastMeetingRecords = await lastMeetingRes.json();
+            try {
+              const lastMeetingRes = await fetch(`/api/meetings/${pastMeetings[0].date}`);
+              const json = await lastMeetingRes.json();
+              lastMeetingRecords = Array.isArray(json) ? json : [];
+            } catch (err) {
+              console.error(err);
+            }
           }
 
           // Initialize from members list, optionally carrying over loans
           const initial = members.map(m => {
-            const lastRecord = lastMeetingRecords.find(r => r.memberId === m.id);
-            const loan = lastRecord ? lastRecord.loan : 0;
+            const lastRecord = lastMeetingRecords.find(r => r && r.memberId === m.id);
+            const loan = lastRecord ? (Number(lastRecord.loan) || 0) : 0;
             const interest = loan * 0.02;
+            const monthlySaving = Number(m.monthlySaving) || 100;
             return {
               memberId: m.id,
               memberName: m.name,
               loan: loan,
               interest: interest,
-              saving: m.monthlySaving,
-              total: interest + m.monthlySaving
+              saving: monthlySaving,
+              total: interest + monthlySaving
             };
           });
           setRecords(initial);

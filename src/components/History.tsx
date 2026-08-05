@@ -17,7 +17,12 @@ export default function History({ onViewMeeting }: { onViewMeeting: (date: strin
     fetch('/api/meetings')
       .then(res => res.json())
       .then(data => {
-        setMeetings(data);
+        setMeetings(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setMeetings([]);
         setLoading(false);
       });
   }, []);

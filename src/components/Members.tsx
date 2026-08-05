@@ -1,6 +1,6 @@
 import { Member } from '../types';
 import { UserPlus, Search, Download, Trash2, Edit2, Loader2, X, Check } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -24,7 +24,12 @@ export default function Members({ userRole }: { userRole: string }) {
     fetch('/api/members')
       .then(res => res.json())
       .then(data => {
-        setMembers(data);
+        setMembers(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setMembers([]);
         setLoading(false);
       });
   };
