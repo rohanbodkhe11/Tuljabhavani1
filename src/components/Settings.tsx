@@ -1,4 +1,5 @@
 import { Settings as SettingsIcon, Save, Database, Trash2, Palette, Shield } from 'lucide-react';
+import { resetDatabase } from '../lib/dbService';
 
 export default function Settings({ userRole }: { userRole: string }) {
   const isAdmin = userRole === 'अध्यक्षा';
@@ -75,7 +76,7 @@ export default function Settings({ userRole }: { userRole: string }) {
               <button 
                 onClick={async () => {
                   if(confirm('तुम्हाला खात्री आहे का की तुम्हाला डेटा रिसेट करायचा आहे?')) {
-                    await fetch('/api/reset', { method: 'POST' });
+                    await resetDatabase();
                     window.location.reload();
                   }
                 }}
@@ -86,8 +87,7 @@ export default function Settings({ userRole }: { userRole: string }) {
               <button 
                 onClick={async () => {
                    if(confirm('सर्व डेटा कायमस्वरूपी हटवला जाईल. सुरू ठेवायचे?')) {
-                     // In this simple app, reset handles it
-                     await fetch('/api/reset', { method: 'POST' });
+                     await resetDatabase();
                      window.location.reload();
                    }
                 }}

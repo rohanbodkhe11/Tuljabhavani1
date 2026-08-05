@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Search, Download, Eye, Loader2 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Calendar, Search, Eye, Loader2 } from 'lucide-react';
+import { fetchMeetingSummaries } from '../lib/dbService';
 
 interface MeetingSummary {
   date: string;
@@ -14,10 +14,9 @@ export default function History({ onViewMeeting }: { onViewMeeting: (date: strin
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetch('/api/meetings')
-      .then(res => res.json())
+    fetchMeetingSummaries()
       .then(data => {
-        setMeetings(Array.isArray(data) ? data : []);
+        setMeetings(data);
         setLoading(false);
       })
       .catch((err) => {

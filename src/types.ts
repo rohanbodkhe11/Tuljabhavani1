@@ -1,5 +1,5 @@
 
-export type Role = 'अध्यक्षा' | 'सचिव' | 'सदस्य';
+export type Role = 'अध्यक्षा' | 'सचिव' | 'खजिनदार' | 'सदस्य' | string;
 
 export interface Member {
   id: string;

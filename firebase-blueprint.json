@@ -1,0 +1,28 @@
+{
+  "entities": {
+    "members": {
+      "title": "Member",
+      "description": "Bachat Gat member records",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "monthlySaving": { "type": "number" },
+        "joinedAt": { "type": "string" }
+      },
+      "required": ["name", "role", "monthlySaving"]
+    },
+    "meetings": {
+      "title": "Meeting",
+      "description": "Monthly meeting records",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "records": { "type": "array" },
+        "total": { "type": "number" },
+        "memberCount": { "type": "number" }
+      },
+      "required": ["date", "records"]
+    }
+  }
+}

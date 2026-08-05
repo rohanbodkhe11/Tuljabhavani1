@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { User as UserIcon, Users, CreditCard, PiggyBank, TrendingUp, Calendar, AlertCircle, ArrowUpRight } from 'lucide-react';
-import { User } from '@supabase/supabase-js';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Cell, PieChart, Pie } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { fetchMembers, fetchMeetingSummaries } from '../lib/dbService';
 
 const data = [
   { name: 'जानेवारी', बचत: 1000, कर्ज: 5000, व्याज: 100 },
@@ -19,12 +19,9 @@ export default function Dashboard({ user, setActiveTab }: { user: any; setActive
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/members').then(res => res.json()).catch(() => []),
-      fetch('/api/meetings').then(res => res.json()).catch(() => [])
-    ]).then(([membersData, meetingsData]: [any, any]) => {
-      const members = Array.isArray(membersData) ? membersData : [];
-      const meetings = Array.isArray(meetingsData) ? meetingsData : [];
-      
+      fetchMembers(),
+      fetchMeetingSummaries()
+    ]).then(([members, meetings]) => {
       const totalSavings = meetings.reduce((acc, m) => acc + (Number(m?.total) || 0), 0);
       
       setStats({

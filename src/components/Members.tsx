@@ -3,6 +3,7 @@ import { UserPlus, Search, Download, Trash2, Edit2, Loader2, X, Check } from 'lu
 import React, { useEffect, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { fetchMembers as getMembersFromDb, addMember, updateMember, deleteMember } from '../lib/dbService';
 
 export default function Members({ userRole }: { userRole: string }) {
   const isAdmin = userRole === 'अध्यक्षा';
@@ -16,22 +17,20 @@ export default function Members({ userRole }: { userRole: string }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchMembers();
+    loadMembers();
   }, []);
 
-  const fetchMembers = () => {
+  const loadMembers = async () => {
     setLoading(true);
-    fetch('/api/members')
-      .then(res => res.json())
-      .then(data => {
-        setMembers(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setMembers([]);
-        setLoading(false);
-      });
+    try {
+      const data = await getMembersFromDb();
+      setMembers(data);
+    } catch (err) {
+      console.error("Error loading members:", err);
+      setMembers([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSaveMember = async (e: React.FormEvent) => {
@@ -40,23 +39,20 @@ export default function Members({ userRole }: { userRole: string }) {
     
     setSaving(true);
     try {
-      const isEdit = !!editingMember.id;
-      const url = isEdit ? `/api/members/${editingMember.id}` : '/api/members';
-      const method = isEdit ? 'PUT' : 'POST';
-      
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingMember)
-      });
-      
-      if (res.ok) {
-        setIsModalOpen(false);
-        setEditingMember(null);
-        fetchMembers();
+      if (editingMember.id) {
+        await updateMember(editingMember.id, editingMember);
+      } else {
+        await addMember({
+          name: editingMember.name,
+          role: editingMember.role,
+          monthlySaving: editingMember.monthlySaving
+        });
       }
+      setIsModalOpen(false);
+      setEditingMember(null);
+      await loadMembers();
     } catch (e) {
-      console.error(e);
+      console.error("Error saving member:", e);
     } finally {
       setSaving(false);
     }
@@ -66,12 +62,10 @@ export default function Members({ userRole }: { userRole: string }) {
     if (!confirm('तुम्हाला खात्री आहे का की तुम्हाला हा सदस्य हटवायचा आहे?')) return;
     
     try {
-      const res = await fetch(`/api/members/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        fetchMembers();
-      }
+      await deleteMember(id);
+      await loadMembers();
     } catch (e) {
-      console.error(e);
+      console.error("Error deleting member:", e);
     }
   };
 

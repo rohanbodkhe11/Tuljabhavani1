@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { PieChart, TrendingUp, Users, Wallet, Loader2 } from 'lucide-react';
+import { TrendingUp, Users, Wallet, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { fetchMeetingSummaries } from '../lib/dbService';
 
 interface MeetingSummary {
   date: string;
@@ -13,8 +14,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/meetings')
-      .then(res => res.json())
+    fetchMeetingSummaries()
       .then(data => {
         const meetingsList = Array.isArray(data) ? data : [];
         setMeetings([...meetingsList].reverse().slice(-6));
