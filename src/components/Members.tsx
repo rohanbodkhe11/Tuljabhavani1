@@ -1,15 +1,15 @@
 import { Member } from '../types';
 import { UserPlus, Search, Download, Trash2, Edit2, Loader2, X, Check } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { fetchMembers as getMembersFromDb, addMember, updateMember, deleteMember } from '../lib/dbService';
+import { generateMembersPDF } from '../lib/pdfGenerator';
 
 export default function Members({ userRole }: { userRole: string }) {
   const isAdmin = userRole === 'अध्यक्षा' || userRole?.toLowerCase() === 'admin' || userRole?.toLowerCase() === 'adhyaksha';
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [generatingPDF, setGeneratingPDF] = useState(false);
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -69,22 +69,15 @@ export default function Members({ userRole }: { userRole: string }) {
     }
   };
 
-  const generatePDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(20);
-    doc.text('साई श्रद्धा महिला बचत गट', 105, 15, { align: 'center' });
-    doc.setFontSize(14);
-    doc.text('सदस्य यादी', 105, 25, { align: 'center' });
-
-    autoTable(doc, {
-      startY: 35,
-      head: [['क्र', 'सदस्याचे नाव', 'पद', 'मासिक बचत']],
-      body: members.map((m, i) => [i + 1, m.name, m.role, `Rs. ${m.monthlySaving}`]),
-      theme: 'grid',
-      headStyles: { fillColor: [16, 185, 129] },
-    });
-
-    doc.save('Members_List.pdf');
+  const handleGeneratePDF = async () => {
+    setGeneratingPDF(true);
+    try {
+      await generateMembersPDF({ members });
+    } catch (e) {
+      console.error('Members PDF Generation failed:', e);
+    } finally {
+      setGeneratingPDF(false);
+    }
   };
 
   const filteredMembers = members.filter(m => 
@@ -134,11 +127,12 @@ export default function Members({ userRole }: { userRole: string }) {
             />
           </div>
           <button 
-            onClick={generatePDF}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-stone-700 bg-stone-50 border border-stone-200 rounded-xl hover:bg-stone-100 transition-colors font-bold text-xs sm:text-sm active:scale-95"
+            onClick={handleGeneratePDF}
+            disabled={generatingPDF}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all font-bold text-xs sm:text-sm active:scale-95 disabled:opacity-50 shadow-sm"
           >
-            <Download className="w-4 h-4 text-emerald-600" />
-            PDF डाउनलोड करा
+            {generatingPDF ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Download className="w-4 h-4 text-white" />}
+            {generatingPDF ? 'PDF तयार होत आहे...' : 'PDF डाउनलोड करा'}
           </button>
         </div>
 

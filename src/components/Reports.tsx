@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, Users, Wallet, Loader2 } from 'lucide-react';
+import { TrendingUp, Users, Wallet, Loader2, Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { fetchMeetingSummaries } from '../lib/dbService';
+import { generateFinancialReportPDF } from '../lib/pdfGenerator';
 
 interface MeetingSummary {
   date: string;
@@ -12,6 +13,7 @@ interface MeetingSummary {
 export default function Reports() {
   const [meetings, setMeetings] = useState<MeetingSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
 
   useEffect(() => {
     fetchMeetingSummaries()
@@ -29,6 +31,17 @@ export default function Reports() {
 
   const totalSaving = meetings.reduce((acc, m) => acc + m.total, 0);
 
+  const handleDownloadPDF = async () => {
+    setGeneratingPDF(true);
+    try {
+      await generateFinancialReportPDF({ meetings });
+    } catch (e) {
+      console.error('Financial PDF Generation Error:', e);
+    } finally {
+      setGeneratingPDF(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -41,9 +54,19 @@ export default function Reports() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-black text-stone-800 tracking-tight">अहवाल आणि विश्लेषण</h1>
-        <p className="text-stone-500 font-medium mt-1">बचत गटाची आर्थिक प्रगती</p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">अहवाल आणि विश्लेषण</h1>
+          <p className="text-stone-500 font-medium text-xs sm:text-sm mt-0.5">बचत गटाची आर्थिक प्रगती व विश्लेषणात्मक माहिती</p>
+        </div>
+        <button
+          onClick={handleDownloadPDF}
+          disabled={generatingPDF}
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-md shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all text-sm disabled:opacity-50"
+        >
+          {generatingPDF ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Download className="w-4 h-4 text-white" />}
+          {generatingPDF ? 'अहवाल PDF तयार होत आहे...' : 'आर्थिक अहवाल PDF डाउनलोड करा'}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

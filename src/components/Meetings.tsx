@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { MeetingRecord } from '../types';
 import { Save, Printer, Download, Calculator, Info, Loader2, CheckCircle, X, CheckCircle2, XCircle, Trash2, AlertTriangle, Users } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { fetchMembers, fetchMeetingRecords, fetchMeetingSummaries, saveMeetingRecords, deleteMeeting } from '../lib/dbService';
+import { generateMeetingPDF } from '../lib/pdfGenerator';
 
 export default function MeetingRegister({ userRole, initialDate, onDateChange }: { userRole: string, initialDate?: string | null, onDateChange?: () => void }) {
   const isAdmin = userRole === 'अध्यक्षा' || userRole?.toLowerCase() === 'admin' || userRole?.toLowerCase() === 'adhyaksha';
@@ -11,6 +10,7 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
   const [date, setDate] = useState(initialDate || new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isCalcOpen, setIsCalcOpen] = useState(false);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
@@ -149,43 +149,19 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
     setRecords(newRecords);
   };
 
-  const generatePDF = () => {
-    const doc = new jsPDF();
-    const formattedDate = new Date(date).toLocaleDateString('mr-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-    
-    // Add header
-    doc.setFontSize(20);
-    doc.text('तुळजाभवानी महिला बचत गट', 105, 15, { align: 'center' });
-    doc.setFontSize(14);
-    doc.text(`मासिक सभा नोंदणी - ${formattedDate}`, 105, 25, { align: 'center' });
-
-    // Summary stats
-    doc.setFontSize(10);
-    doc.text(`उपस्थिती: ${records.filter(r => r.present !== false).length}/${records.length} सदस्य`, 14, 40);
-    doc.text(`एकूण कर्ज: Rs. ${totals.loan}`, 65, 40);
-    doc.text(`एकूण व्याज: Rs. ${totals.interest}`, 110, 40);
-    doc.text(`एकूण जमा: Rs. ${totals.total}`, 160, 40);
-
-    // Table
-    autoTable(doc, {
-      startY: 50,
-      head: [['क्र', 'सदस्याचे नाव', 'उपस्थिती', 'कर्ज (Rs)', 'व्याज (Rs)', 'बचत (Rs)', 'एकूण (Rs)']],
-      body: records.map((r, i) => [
-        i + 1,
-        r.memberName,
-        r.present !== false ? 'उपस्थित' : 'अनुपस्थित',
-        r.loan,
-        r.interest,
-        r.saving,
-        r.total
-      ]),
-      theme: 'grid',
-      headStyles: { fillColor: [16, 185, 129] },
-      foot: [['', '', 'एकूण जमा', totals.loan, totals.interest, totals.saving, totals.total]],
-      footStyles: { fillColor: [31, 41, 55], textColor: [255, 255, 255] }
-    });
-
-    doc.save(`Meeting_Register_${date}.pdf`);
+  const handleGeneratePDF = async () => {
+    setGeneratingPDF(true);
+    try {
+      await generateMeetingPDF({
+        date,
+        records: records as MeetingRecord[],
+        totals
+      });
+    } catch (e) {
+      console.error('PDF Generation failed:', e);
+    } finally {
+      setGeneratingPDF(false);
+    }
   };
 
   const updateRecord = (index: number, field: keyof MeetingRecord, value: number) => {
@@ -527,11 +503,12 @@ export default function MeetingRegister({ userRole, initialDate, onDateChange }:
           प्रिंट काढा
         </button>
         <button 
-          onClick={generatePDF}
-          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-white border border-stone-200 rounded-xl font-bold text-stone-700 hover:bg-stone-50 transition-all text-sm shadow-xs active:scale-95"
+          onClick={handleGeneratePDF}
+          disabled={generatingPDF}
+          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-xl font-extrabold shadow-md shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all text-sm disabled:opacity-50"
         >
-          <Download className="w-4 h-4 text-emerald-600" />
-          अहवाल डाउनलोड करा (PDF)
+          {generatingPDF ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Download className="w-4 h-4 text-white" />}
+          {generatingPDF ? 'PDF तयार होत आहे...' : 'अहवाल डाउनलोड करा (PDF)'}
         </button>
       </div>
     </div>

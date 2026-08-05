@@ -11,9 +11,9 @@ import { db } from "../firebase";
 import { Member, MeetingRecord } from "../types";
 
 export const initialMembers: Member[] = [
-  { id: '1', name: 'सुनिता पाटील', role: 'अध्यक्षा', monthlySaving: 100, joinedAt: '2024-01-01' },
-  { id: '2', name: 'अनिता शहा', role: 'सचिव', monthlySaving: 100, joinedAt: '2024-01-01' },
-  { id: '3', name: 'आशा कदम', role: 'खजिनदार', monthlySaving: 100, joinedAt: '2024-01-01' },
+  { id: '1', name: 'रुख्मणबाई बोडखे', role: 'अध्यक्षा', monthlySaving: 100, joinedAt: '2024-01-01' },
+  { id: '2', name: 'लीलाबाई तुपे', role: 'सचिव', monthlySaving: 100, joinedAt: '2024-01-01' },
+  { id: '3', name: 'नर्मदाबाई तुपे', role: 'खजिनदार', monthlySaving: 100, joinedAt: '2024-01-01' },
   { id: '4', name: 'मीना देशपांडे', role: 'सदस्य', monthlySaving: 100, joinedAt: '2024-01-01' },
   { id: '5', name: 'रेखा शिंदे', role: 'सदस्य', monthlySaving: 100, joinedAt: '2024-01-01' },
   { id: '6', name: 'पूजा पवार', role: 'सदस्य', monthlySaving: 100, joinedAt: '2024-01-01' },
